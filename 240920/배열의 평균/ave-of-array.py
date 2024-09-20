@@ -11,7 +11,7 @@ for i in range(len(arr)):
 #col
 print()
 for i in range(len(arr[0])):
-    ans = round(arr[0][i]+ arr[1][i]/2,1)
+    ans = round((arr[0][i]+ arr[1][i])/2,1)
     print(ans, end =' ')
 
 #total
