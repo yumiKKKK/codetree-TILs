@@ -1,0 +1,158 @@
+// 삼성 2025 상반기 오전 2번 개구리의 여행
+// 26-03-19 
+// 최단경로 -> bfs: 정점 사이의 가중치가 모두 같아야함 (x), dijkstra (o)
+import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static int N, Q;
+    public static char[][] stone;
+    public static int[][] travel;
+    public static int[] dx = {-1, 1, 0, 0};
+    public static int[] dy = {0, 0, -1, 1};
+    public static final int INF = 987654321;
+
+    public static void main(String[] args) throws Exception {
+        // input
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        N = Integer.parseInt(br.readLine());
+        stone = new char[N][N];
+        for(int i = 0; i < N; i++) {
+            String tmp = br.readLine();
+            for(int j = 0; j < N; j++) {
+                stone[i] = tmp.toCharArray();
+            }
+        }
+        Q = Integer.parseInt(br.readLine());
+        travel = new int[Q][4];
+        for(int i = 0; i < Q; i++) {
+            String[] tmp2 = br.readLine().split(" ");
+            for(int j = 0; j < 4; j++) {
+                travel[i][j] = Integer.parseInt(tmp2[j]);
+            }
+        }
+
+        // logic
+        // 각 여행마다 걸린시간 출력하기
+        for(int i = 0 ; i < Q; i++) {
+            int r1 = travel[i][0] - 1;
+            int c1 = travel[i][1] - 1;
+            int r2 = travel[i][2] - 1;
+            int c2 = travel[i][3] - 1;
+
+            System.out.println(dijkstra(r1, c1, r2, c2));
+        }
+    }
+
+    public static int dijkstra(int r1, int c1, int r2, int c2) {
+        // init
+        PriorityQueue<Node> pq = new PriorityQueue<>();
+        pq.offer(new Node (r1, c1, 1, 0));
+        int[][][] dist = new int[N][N][6];
+        for(int i = 0; i < N; i++) {
+            for(int j = 0; j < N; j++) {
+                Arrays.fill(dist[i][j], INF);
+            }
+        }
+        dist[r1][c1][1] = 0;                                                                       
+
+        // logic 
+        while(!pq.isEmpty()) {
+            Node now = pq.poll();
+
+            // exit
+            if (dist[now.r][now.c][now.p] < now.t)
+                continue;
+            if (now.r == r2 && now.c == c2) {
+                return now.t;
+            }
+
+            // 1. jump
+            for(int d = 0; d < 4; d++) {
+                int nr = now.r + dx[d] * now.p;
+                int nc = now.c + dy[d] * now.p;
+
+                if (nr < 0 || nr >= N || nc < 0 || nc >= N)
+                    continue;
+                if (stone[nr][nc] != '.')
+                    continue;
+                if (!isCanGo(now.r, now.c, now.p, d))
+                    continue;
+                if (dist[nr][nc][now.p] <= now.t + 1) 
+                    continue;
+                dist[nr][nc][now.p] = now.t + 1;
+                pq.offer(new Node (nr, nc, now.p, dist[nr][nc][now.p]));
+            }
+
+            // 2. jump power ++
+            if (now.p < 5) {
+                int np = now.p + 1;
+                int nt = now.t + np * np;
+                if (dist[now.r][now.c][np] > nt) {
+                    dist[now.r][now.c][np] = nt;
+                    pq.offer(new Node (now.r, now.c, np, dist[now.r][now.c][np]));
+                }
+            }
+
+            // 3. jump power --
+            if (now.p > 1) {
+                for(int i = 1; i < now.p; i++) {
+                    if (dist[now.r][now.c][i] > now.t + 1) {
+                        dist[now.r][now.c][i] = now.t + 1;
+                        pq.offer(new Node (now.r, now.c, i, dist[now.r][now.c][i]));
+                    }
+                }
+            }
+        }
+        return -1;
+    }
+
+    // 가는 길 천적 확인 함수
+    public static boolean isCanGo(int r, int c, int p, int d) {
+        for(int i = 0; i < p; i++) {
+            r += dx[d];
+            c += dy[d];
+            if (stone[r][c] == '#')
+                return false;
+        }
+        return true;
+    }
+
+    // -- test --
+    public static void print(int[][] arr) {
+        for(int[] ar : arr) {
+            for(int a : ar)
+                System.out.print(a + " ");
+            System.out.println();
+        }
+        System.out.println();
+    }
+
+    public static void print(char[][] arr) {
+        for(char[] ar : arr) {
+            for(char a : ar)
+                System.out.print(a + " ");
+            System.out.println();
+        }
+        System.out.println();
+    }
+
+    // class
+    public static class Node implements Comparable<Node> {
+        int r, c;
+        int p; // jump power
+        int t; // time
+
+        public Node(int r, int c, int p, int t) {
+            this.r = r;
+            this.c = c;
+            this.p = p;
+            this.t = t;
+        }
+
+        @Override
+        public int compareTo(Node o) {
+            return this.t - o.t;
+        }
+    }
+}
