@@ -1,0 +1,71 @@
+// dijkstra
+
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt();
+        int m = sc.nextInt();
+        // graph
+        List<List<Node>> graph = new ArrayList<>();
+        for(int i = 0; i < n + 1; i++) {
+            graph.add(new ArrayList<>());
+        }
+        for (int i = 0; i < m; i++) {
+            int u = sc.nextInt();
+            int v = sc.nextInt();
+            int w = sc.nextInt();
+            graph.get(u).add(new Node(v, w));
+        }
+
+        // dist
+        int[] dist = new int[n + 1];
+        Arrays.fill(dist, Integer.MAX_VALUE);
+        
+        // start
+        dist[1] = 0;
+
+        // pq
+        PriorityQueue<Node> pq = new PriorityQueue<>();
+        pq.offer(new Node(1, 0));
+
+        // dijkstra
+        while(!pq.isEmpty()) {
+            Node now = pq.poll();
+
+            if (dist[now.idx] < now.cost)
+                continue;
+
+            for(Node next : graph.get(now.idx)) {
+                int ncost = now.cost + next.cost;
+                if (dist[next.idx] > ncost) {
+                    dist[next.idx] = ncost;
+                    pq.offer(new Node(next.idx, ncost));
+                }
+            }
+        }
+
+        for(int i = 2; i < dist.length; i++) {
+            if (dist[i] == Integer.MAX_VALUE)
+                System.out.println(-1);
+            else
+                System.out.println(dist[i]);
+        }
+    }
+
+    public static class Node implements Comparable<Node> {
+        int idx;
+        int cost;
+
+        public Node(int idx, int cost) {
+            this.idx = idx;
+            this.cost = cost;
+        }
+
+        @Override
+        public int compareTo(Node o) {
+            return this.cost - o.cost;
+        }
+    }
+}
