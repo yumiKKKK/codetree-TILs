@@ -1,0 +1,279 @@
+// 삼성 2025 상반기 오후 1. 미생물 연구
+// 26-03-21
+
+import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static int N, Q;
+    public static int[][] board;
+    public static int[][] newboard;
+    public static int[] dx = {-1, 1, 0, 0};
+    public static int[] dy = {0, 0, -1, 1};
+    public static List<Molecule> molecules;
+
+    public static void main(String[] args) throws Exception {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        String[] input = br.readLine().split(" ");
+        N = Integer.parseInt(input[0]);
+        Q = Integer.parseInt(input[1]);
+
+        board = new int[N][N];
+
+        for (int num = 1; num <= Q; num++) {
+            input = br.readLine().split(" ");
+            int r1 = Integer.parseInt(input[0]);
+            int c1 = Integer.parseInt(input[1]);
+            int r2 = Integer.parseInt(input[2]);
+            int c2 = Integer.parseInt(input[3]);
+
+            // 1. 미생물 투입
+            for (int r = r1; r < r2; r++) {
+                for (int c = c1; c < c2; c++) {
+                    board[r][c] = num;
+                }
+            }
+
+            // 단절되면 삭제
+            int[] cnt = new int[num + 1];
+            boolean[][] visit = new boolean[N][N];
+
+            for (int r = 0; r < N; r++) {
+                for (int c = 0; c < N; c++) {
+                    if (board[r][c] != 0 && !visit[r][c]) {
+                        cnt[board[r][c]]++;
+                        bfs(visit, r, c);
+                    }
+                }
+            }
+
+            for (int n = 1; n <= num; n++) {
+                if (cnt[n] >= 2) {
+                    delete(n);
+                }
+            }
+
+            // 2. 배양 용기 이동
+            molecules = new ArrayList<>();
+            visit = new boolean[N][N];
+
+            for (int r = 0; r < N; r++) {
+                for (int c = 0; c < N; c++) {
+                    if (board[r][c] != 0 && !visit[r][c]) {
+                        bfsCnt(visit, r, c);
+                    }
+                }
+            }
+
+            // 넓이 내림차순, 번호 오름차순
+            Collections.sort(molecules, new Comparator<Molecule>() {
+                @Override
+                public int compare(Molecule a, Molecule b) {
+                    if (a.area != b.area) return b.area - a.area;
+                    return a.num - b.num;
+                }
+            });
+
+            newboard = new int[N][N];
+
+            // 큰 미생물부터 차례로 새 보드에 배치
+            for (Molecule m : molecules) {
+                int h = m.r2 - m.r1 + 1;
+                int w = m.c2 - m.c1 + 1;
+
+                boolean placed = false;
+
+                for (int sr = 0; sr <= N - h && !placed; sr++) {
+                    for (int sc = 0; sc <= N - w; sc++) {
+                        boolean canPlace = true;
+
+                        // 놓을 수 있는지 검사
+                        for (int dr = 0; dr < h && canPlace; dr++) {
+                            for (int dc = 0; dc < w; dc++) {
+                                int or = m.r1 + dr;
+                                int oc = m.c1 + dc;
+
+                                if (board[or][oc] != m.num) 
+                                    continue;
+
+                                if (newboard[sr + dr][sc + dc] != 0) {
+                                    canPlace = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!canPlace) 
+                            continue;
+
+                        // 배치
+                        for (int dr = 0; dr < h; dr++) {
+                            for (int dc = 0; dc < w; dc++) {
+                                int or = m.r1 + dr;
+                                int oc = m.c1 + dc;
+
+                                if (board[or][oc] == m.num) {
+                                    newboard[sr + dr][sc + dc] = m.num;
+                                }
+                            }
+                        }
+
+                        placed = true;
+                        break;
+                    }
+                }
+            }
+
+            // 새 보드 반영
+            for (int r = 0; r < N; r++) {
+                for (int c = 0; c < N; c++) {
+                    board[r][c] = newboard[r][c];
+                }
+            }
+
+            // 3. 실험 결과 기록
+            int[] areaByNum = new int[num + 1];
+            for (Molecule m : molecules) {
+                areaByNum[m.num] = m.area;
+            }
+            boolean[][] adj = new boolean[num + 1][num + 1];
+
+            for (int r = 0; r < N; r++) {
+                for (int c = 0; c < N; c++) {
+                    if (board[r][c] == 0) 
+                        continue;
+
+                    for (int dir = 0; dir < 4; dir++) {
+                        int nr = r + dx[dir];
+                        int nc = c + dy[dir];
+
+                        if (!isBounded(nr, nc)) 
+                            continue;
+                        if (board[nr][nc] == 0) 
+                            continue;
+                        if (board[nr][nc] == board[r][c]) 
+                            continue;
+
+                        int a = board[r][c];
+                        int b = board[nr][nc];
+                        adj[a][b] = true;
+                        adj[b][a] = true;
+                    }
+                }
+            }
+
+            int answer = 0;
+            for (int a = 1; a <= num; a++) {
+                for (int b = a + 1; b <= num; b++) {
+                    if (adj[a][b]) {
+                        answer += areaByNum[a] * areaByNum[b];;
+                    }
+                }
+            }
+
+            System.out.println(answer);
+        }
+    }
+
+    // 특정 번호 미생물 제거
+    public static void delete(int num) {
+        for (int r = 0; r < N; r++) {
+            for (int c = 0; c < N; c++) {
+                if (board[r][c] == num) {
+                    board[r][c] = 0;
+                }
+            }
+        }
+    }
+
+    // bfs
+    public static void bfs(boolean[][] visit, int r, int c) {
+        Queue<int[]> q = new LinkedList<>();
+        q.offer(new int[]{r, c});
+        visit[r][c] = true;
+
+        int target = board[r][c];
+
+        while (!q.isEmpty()) {
+            int[] now = q.poll();
+
+            for (int dir = 0; dir < 4; dir++) {
+                int nr = now[0] + dx[dir];
+                int nc = now[1] + dy[dir];
+
+                if (!isBounded(nr, nc)) continue;
+                if (visit[nr][nc]) continue;
+                if (board[nr][nc] != target) continue;
+
+                visit[nr][nc] = true;
+                q.offer(new int[]{nr, nc});
+            }
+        }
+    }
+
+    // 각 미생물의 넓이 + bounding box 수집
+    public static void bfsCnt(boolean[][] visit, int r, int c) {
+        Queue<int[]> q = new LinkedList<>();
+        q.offer(new int[]{r, c});
+        visit[r][c] = true;
+
+        int target = board[r][c];
+        int area = 1;
+        int sr = r, sc = c, er = r, ec = c;
+
+        while (!q.isEmpty()) {
+            int[] now = q.poll();
+
+            sr = Math.min(sr, now[0]);
+            sc = Math.min(sc, now[1]);
+            er = Math.max(er, now[0]);
+            ec = Math.max(ec, now[1]);
+
+            for (int dir = 0; dir < 4; dir++) {
+                int nr = now[0] + dx[dir];
+                int nc = now[1] + dy[dir];
+
+                if (!isBounded(nr, nc)) continue;
+                if (visit[nr][nc]) continue;
+                if (board[nr][nc] != target) continue;
+
+                visit[nr][nc] = true;
+                area++;
+                q.offer(new int[]{nr, nc});
+            }
+        }
+
+        molecules.add(new Molecule(target, area, sr, sc, er, ec));
+    }
+
+    public static boolean isBounded(int r, int c) {
+        return r >= 0 && r < N && c >= 0 && c < N;
+    }
+
+    public static class Molecule {
+        int num;   // 미생물 번호
+        int area;  // 넓이
+        int r1, c1; // bounding box 좌상단
+        int r2, c2; // bounding box 우하단
+
+        public Molecule(int num, int area, int r1, int c1, int r2, int c2) {
+            this.num = num;
+            this.area = area;
+            this.r1 = r1;
+            this.c1 = c1;
+            this.r2 = r2;
+            this.c2 = c2;
+        }
+    }
+
+    // 디버깅용
+    public static void print(int[][] arr) {
+        for (int[] ar : arr) {
+            for (int a : ar) {
+                System.out.print(a + " ");
+            }
+            System.out.println();
+        }
+        System.out.println();
+    }
+}
