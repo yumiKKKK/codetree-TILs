@@ -10,18 +10,11 @@ public class Main {
         long right = S;
 
         while (left <= right) {
-            long mid = left + (right - left) / 2;
+            long mid = (left + right) / 2;
 
-            long sum; // overflow
-            if (mid % 2 == 0) {
-                sum = (mid / 2) * (mid + 1);
-            } else {
-                sum = mid * ((mid + 1) / 2);
-            }
-
-            if (sum <= S) {
-                answer = mid;
+            if (mid * (mid + 1) / 2 <= S) {
                 left = mid + 1;
+                answer = Math.max(answer, mid);
             } else {
                 right = mid - 1;
             }
