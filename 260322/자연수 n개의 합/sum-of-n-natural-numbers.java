@@ -6,9 +6,9 @@ public class Main {
         long S = sc.nextLong();
 
         // logic
-        long answer = 0L;
+        long answer = 0;
         long left = 1;
-        long right = 100000;
+        long right = S;
 
         while(left <= right) {
             long mid = (left + right) / 2;
