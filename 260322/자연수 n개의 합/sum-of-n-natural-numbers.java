@@ -1,13 +1,14 @@
 import java.util.*;
 
 public class Main {
+    public static final int MAX_S = 2000000000;
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         long S = sc.nextLong();
 
         long answer = 0;
         long left = 1;
-        long right = S;
+        long right = MAX_S;
 
         while (left <= right) {
             long mid = (left + right) / 2;
