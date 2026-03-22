@@ -11,7 +11,7 @@ public class Main {
         long right = S;
 
         while(left <= right) {
-            long mid = (left + right) / 2;
+            long mid = left + (right - left) / 2;
 
             if ((mid * (mid + 1)) / 2 <= S) {
                 answer = mid;
