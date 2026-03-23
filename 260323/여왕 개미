@@ -1,0 +1,122 @@
+import java.util.*;
+
+public class Main {
+    static int totalCommands;
+
+    // index 0은 사용하지 않기 위해 dummy
+    static List<Boolean> anthillDeleted = new ArrayList<>(Arrays.asList(false));
+    static List<Integer> anthillPositions = new ArrayList<>(Arrays.asList(0));
+
+    static void initialVillageConstruction(Scanner sc) {
+        int numInitialAnthills = sc.nextInt();
+        for (int i = 1; i <= numInitialAnthills; i++) {
+            int position = sc.nextInt();
+            anthillPositions.add(position);
+            anthillDeleted.add(false);
+        }
+    }
+
+    static void addNewAnthill(Scanner sc) {
+        int newAnthillPosition = sc.nextInt();
+        anthillPositions.add(newAnthillPosition);
+        anthillDeleted.add(false);
+    }
+
+    static void removeAnthill(Scanner sc) {
+        int anthillNumber = sc.nextInt();
+        anthillDeleted.set(anthillNumber, true);
+    }
+
+    static void processScoutQuery(Scanner sc) {
+        int numAnts = sc.nextInt();
+
+        int aliveCount = 0; // 집 개수 
+        int firstPos = -1; // 커버 안된 첫 집 
+        int lastPos = -1; // 커버 안된 마지막 집 
+        for (int i = 1; i < anthillPositions.size(); i++) {
+            if (anthillDeleted.get(i)) 
+                continue;
+            int x = anthillPositions.get(i);
+            if (firstPos == -1) 
+                firstPos = x;
+            lastPos = x;
+            aliveCount++;
+        }
+
+        // 집 개수가 0이거나, 개미가 집보다 많을 때 : 0
+        if (aliveCount == 0 || numAnts >= aliveCount) {
+            System.out.println(0);
+            return;
+        }
+
+        // Binary Search로 시간 구하기  
+        int left = 0;
+        int right = lastPos - firstPos;
+        int answer = right;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            if (canScout(numAnts, mid)) { // 모두 커버 가능하면 저장 
+                answer = mid;
+                right = mid - 1; // 최소값 구하기 위해 계속 
+            } else {
+                left = mid + 1;
+            }
+        }
+        System.out.println(answer);
+    }
+
+    static boolean canScout(int numAnts, int time) {
+        int used = 0; // 현재 개미 
+        int i = 1;
+        int size = anthillPositions.size();
+
+        while (i < size) {
+            // 이미 삭제된 집은 건너뜀
+            while (i < size && anthillDeleted.get(i)) 
+                i++;
+            if (i == size) 
+                break;
+
+            // 현재 개미 time만큼 일하기 
+            used++;
+            if (used > numAnts) 
+                return false;
+            int coverUntil = anthillPositions.get(i) + time;
+            i++;
+            while (i < size) {
+                if (anthillDeleted.get(i)) {
+                    i++;
+                    continue;
+                }
+                if (anthillPositions.get(i) <= coverUntil) {
+                    i++;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        totalCommands = sc.nextInt();
+
+        while (totalCommands -- > 0) {
+            int commandType = sc.nextInt();
+
+            if (commandType == 100) {
+                initialVillageConstruction(sc);
+            } else if (commandType == 200) {
+                addNewAnthill(sc);
+            } else if (commandType == 300) {
+                removeAnthill(sc);
+            } else if (commandType == 400) {
+                processScoutQuery(sc);
+            }
+        }
+
+        sc.close();
+    }
+}
